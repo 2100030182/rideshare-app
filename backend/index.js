@@ -4,18 +4,20 @@ const connectDB = require('./config/db');
 const app = express();
 const PORT = 5000;
 
-// connect database
+// Connect MongoDB
 connectDB();
 
-// middleware
+// Middleware
 app.use(express.json());
 
-// routes
+// Routes
 const tripRoutes = require('./routes/trip.routes');
+const rideRequestRoutes = require('./routes/rideRequest.routes');
 
 app.use('/api/trips', tripRoutes);
+app.use('/api/requests', rideRequestRoutes);
 
-// test root route
+// Health check
 app.get('/', (req, res) => {
   res.send('RideShare backend is running');
 });

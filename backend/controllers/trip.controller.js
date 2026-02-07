@@ -31,7 +31,30 @@ const getAllTrips = async (req, res) => {
   }
 };
 
+// GET /api/trips/search - search trips
+const searchTrips = async (req, res) => {
+  try {
+    const { from, to, date } = req.query;
+
+    const query = {};
+
+    if (from) query.from = from;
+    if (to) query.to = to;
+    if (date) query.date = date;
+
+    const trips = await Trip.find(query);
+
+    res.status(200).json(trips);
+  } catch (error) {
+    res.status(500).json({
+      message: 'Failed to search trips',
+      error: error.message
+    });
+  }
+};
+
 module.exports = {
   createTrip,
-  getAllTrips
+  getAllTrips,
+  searchTrips
 };

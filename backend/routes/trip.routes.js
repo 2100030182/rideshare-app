@@ -3,13 +3,17 @@ const router = express.Router();
 
 const {
   createTrip,
-  getAllTrips
+  getAllTrips,
+  searchTrips
 } = require('../controllers/trip.controller');
+
+// SEARCH trips (Passenger)
+router.get('/search', searchTrips);
 
 // GET all trips
 router.get('/', getAllTrips);
 
-// POST create trip
+// CREATE trip (Rider)
 router.post('/', createTrip);
 
 module.exports = router;
