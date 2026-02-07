@@ -32,7 +32,18 @@ const getRequestsForTrip = async (req, res) => {
 
     const requests = await RideRequest.find({ trip: tripId });
 
-    res.status(200).json(requests);
+    // Hide passenger contact unless accepted
+    const sanitizedRequests = requests.map((reqItem) => {
+      const reqObj = reqItem.toObject();
+
+      if (reqObj.status !== 'accepted') {
+        delete reqObj.passengerContact;
+      }
+
+      return reqObj;
+    });
+
+    res.status(200).json(sanitizedRequests);
   } catch (error) {
     res.status(500).json({
       message: 'Failed to fetch ride requests',
