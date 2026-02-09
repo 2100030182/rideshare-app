@@ -1,4 +1,5 @@
 const express = require('express');
+const cors = require('cors');
 const connectDB = require('./config/db');
 
 const app = express();
@@ -6,6 +7,9 @@ const PORT = 5000;
 
 // Connect MongoDB
 connectDB();
+
+// Enable CORS
+app.use(cors());
 
 // Middleware
 app.use(express.json());
