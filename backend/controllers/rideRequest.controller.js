@@ -1,87 +1,79 @@
-const RideRequest = require('../models/RideRequest');
+const RideRequest = require('../models/RideRequest')
 
-// POST /api/requests - passenger requests a ride
-const createRideRequest = async (req, res) => {
+// Passenger creates a ride request
+exports.createRideRequest = async (req, res) => {
   try {
-    const { tripId, passengerName, passengerContact } = req.body;
+    const { trip, passengerName, passengerContact } = req.body
 
-    const request = new RideRequest({
-      trip: tripId,
+    if (!trip || !passengerName || !passengerContact) {
+      return res.status(400).json({
+        message: 'All fields are required'
+      })
+    }
+
+    const rideRequest = new RideRequest({
+      trip,
       passengerName,
-      passengerContact
-    });
+      passengerContact,
+      status: 'pending'
+    })
 
-    await request.save();
+    const savedRequest = await rideRequest.save()
 
-    res.status(201).json({
-      message: 'Ride request sent successfully',
-      request
-    });
+    res.status(201).json(savedRequest)
   } catch (error) {
     res.status(500).json({
       message: 'Failed to create ride request',
       error: error.message
-    });
+    })
   }
-};
+}
 
-// GET /api/requests/trip/:tripId - rider views requests for a trip
-const getRequestsForTrip = async (req, res) => {
+// Rider views all requests for a specific trip
+exports.getRequestsByTrip = async (req, res) => {
   try {
-    const { tripId } = req.params;
+    const { tripId } = req.params
 
-    const requests = await RideRequest.find({ trip: tripId });
+    const requests = await RideRequest.find({ trip: tripId })
 
-    // Hide passenger contact unless accepted
-    const sanitizedRequests = requests.map((reqItem) => {
-      const reqObj = reqItem.toObject();
-
-      if (reqObj.status !== 'accepted') {
-        delete reqObj.passengerContact;
-      }
-
-      return reqObj;
-    });
-
-    res.status(200).json(sanitizedRequests);
+    res.status(200).json(requests)
   } catch (error) {
     res.status(500).json({
-      message: 'Failed to fetch ride requests',
+      message: 'Failed to fetch requests',
       error: error.message
-    });
+    })
   }
-};
+}
 
-// PATCH /api/requests/:requestId - accept or reject request
-const updateRequestStatus = async (req, res) => {
+// Rider accepts or rejects a request
+exports.updateRequestStatus = async (req, res) => {
   try {
-    const { requestId } = req.params;
-    const { status } = req.body;
+    const { requestId } = req.params
+    const { status } = req.body
 
     if (!['accepted', 'rejected'].includes(status)) {
-      return res.status(400).json({ message: 'Invalid status' });
+      return res.status(400).json({
+        message: 'Status must be accepted or rejected'
+      })
     }
 
-    const request = await RideRequest.findByIdAndUpdate(
+    const updatedRequest = await RideRequest.findByIdAndUpdate(
       requestId,
       { status },
       { new: true }
-    );
+    )
 
-    res.status(200).json({
-      message: 'Request status updated',
-      request
-    });
+    if (!updatedRequest) {
+      return res.status(404).json({
+        message: 'Request not found'
+      })
+    }
+
+    res.status(200).json(updatedRequest)
   } catch (error) {
     res.status(500).json({
-      message: 'Failed to update request status',
+      message: 'Failed to update request',
       error: error.message
-    });
+    })
   }
-};
-
-module.exports = {
-  createRideRequest,
-  getRequestsForTrip,
-  updateRequestStatus
-};
+}

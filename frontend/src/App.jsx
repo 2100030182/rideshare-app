@@ -1,116 +1,131 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react'
 
 function App() {
-  const [trips, setTrips] = useState([]);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+  const [trips, setTrips] = useState([])
+  const [error, setError] = useState('')
+  const [message, setMessage] = useState('')
 
-  const [selectedTripId, setSelectedTripId] = useState(null);
-  const [passengerName, setPassengerName] = useState('');
-  const [passengerContact, setPassengerContact] = useState('');
+  const [selectedTripId, setSelectedTripId] = useState(null)
+  const [requests, setRequests] = useState([])
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/trips')
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to fetch trips');
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setTrips(data);
-      })
-      .catch((err) => {
-        setError(err.message);
-      });
-  }, []);
+    fetch('/api/trips')
+      .then(res => res.json())
+      .then(data => setTrips(data))
+      .catch(() => setError('Failed to fetch trips'))
+  }, [])
 
-  const submitRequest = () => {
-    setError('');
-    setSuccess('');
+  const viewRequests = async (tripId) => {
+    setError('')
+    setMessage('')
+    setSelectedTripId(tripId)
 
-    if (!passengerName || !passengerContact) {
-      setError('Please enter name and contact');
-      return;
+    try {
+      const res = await fetch(`/api/requests/trip/${tripId}`)
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to fetch requests')
+      }
+
+      setRequests(data)
+    } catch (err) {
+      setError(err.message)
     }
+  }
 
-    fetch('http://localhost:5000/api/requests', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        tripId: selectedTripId,
-        passengerName,
-        passengerContact
+  const updateRequestStatus = async (requestId, status) => {
+    setError('')
+    setMessage('')
+
+    try {
+      const res = await fetch(`/api/requests/${requestId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
       })
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error('Failed to submit request');
-        }
-        return response.json();
-      })
-      .then(() => {
-        setSuccess('Ride request sent successfully!');
-        setPassengerName('');
-        setPassengerContact('');
-        setSelectedTripId(null);
-      })
-      .catch((err) => {
-        setError(err.message);
-      });
-  };
+
+      const data = await res.json()
+
+      if (!res.ok) {
+        throw new Error(data.message || 'Failed to update request')
+      }
+
+      setMessage(`Request ${status}`)
+
+      // Refresh requests list
+      viewRequests(selectedTripId)
+    } catch (err) {
+      setError(err.message)
+    }
+  }
 
   return (
     <div style={{ padding: '20px' }}>
       <h1>🚗 RideShare App</h1>
 
       {error && <p style={{ color: 'red' }}>{error}</p>}
-      {success && <p style={{ color: 'green' }}>{success}</p>}
+      {message && <p style={{ color: 'green' }}>{message}</p>}
 
-      <h2>Available Trips</h2>
+      <h2>Trips</h2>
 
       {trips.length === 0 && <p>No trips available.</p>}
 
       <ul>
-        {trips.map((trip) => (
+        {trips.map(trip => (
           <li key={trip._id} style={{ marginBottom: '20px' }}>
-            <strong>{trip.from}</strong> → <strong>{trip.to}</strong>
-            <br />
-            Date: {trip.date} | Time: {trip.time}
-            <br />
-            Seats: {trip.availableSeats}
-            <br />
+            <strong>{trip.from} → {trip.to}</strong><br />
+            Date: {trip.date} | Time: {trip.time}<br />
+            Seats: {trip.availableSeats}<br />
 
-            <button onClick={() => setSelectedTripId(trip._id)}>
-              Request Ride
+            <button onClick={() => viewRequests(trip._id)}>
+              View Requests
             </button>
 
             {selectedTripId === trip._id && (
               <div style={{ marginTop: '10px' }}>
-                <input
-                  type="text"
-                  placeholder="Your Name"
-                  value={passengerName}
-                  onChange={(e) => setPassengerName(e.target.value)}
-                />
-                <br />
-                <input
-                  type="text"
-                  placeholder="Your Contact"
-                  value={passengerContact}
-                  onChange={(e) => setPassengerContact(e.target.value)}
-                />
-                <br />
-                <button onClick={submitRequest}>Submit Request</button>
+                <h4>Ride Requests</h4>
+
+                {requests.length === 0 && (
+                  <p>No requests for this trip.</p>
+                )}
+
+                <ul>
+                  {requests.map(req => (
+                    <li key={req._id} style={{ marginBottom: '10px' }}>
+                      Passenger: {req.passengerName}<br />
+                      Status: {req.status}<br />
+
+                      {req.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() =>
+                              updateRequestStatus(req._id, 'accepted')
+                            }
+                          >
+                            Accept
+                          </button>{' '}
+                          <button
+                            onClick={() =>
+                              updateRequestStatus(req._id, 'rejected')
+                            }
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </li>
         ))}
       </ul>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App

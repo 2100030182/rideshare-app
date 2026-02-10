@@ -1,19 +1,19 @@
-const express = require('express');
-const router = express.Router();
+const express = require('express')
+const router = express.Router()
 
 const {
   createRideRequest,
-  getRequestsForTrip,
+  getRequestsByTrip,
   updateRequestStatus
-} = require('../controllers/rideRequest.controller');
+} = require('../controllers/rideRequest.controller')
 
-// Passenger requests a ride
-router.post('/', createRideRequest);
+// Passenger creates a request
+router.post('/', createRideRequest)
 
-// Rider views requests for a specific trip
-router.get('/trip/:tripId', getRequestsForTrip);
+// Rider views all requests for a trip
+router.get('/trip/:tripId', getRequestsByTrip)
 
 // Rider accepts or rejects a request
-router.patch('/:requestId', updateRequestStatus);
+router.patch('/:requestId', updateRequestStatus)
 
-module.exports = router;
+module.exports = router
